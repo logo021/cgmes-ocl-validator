@@ -34,6 +34,7 @@ import javax.xml.transform.TransformerException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,6 +50,7 @@ import static ocl.service.util.TransformationUtils.addNode;
 import static ocl.service.util.TransformationUtils.convertToArray;
 import static ocl.service.util.TransformationUtils.getNodeList;
 import static ocl.service.util.TransformationUtils.getSimpleNameNoExt;
+import static ocl.service.util.TransformationUtils.printDocument;
 
 /**
  * This service is responsible for:
@@ -143,13 +145,15 @@ public class TransformationService extends BasicService implements Transformatio
                 logger.info("XMI ready for:\t "+ key);
 
                 //DEBUG: print XMI to disk
-                /*
-                try {
-                    TransformationUtils.printDocument(entry.getValue().get(), entry.getKey().xml_name + "_xmi.xml");
-                } catch (TransformerException e){
-                    e.printStackTrace();
+                if (Configuration.debugMode) {
+                    try {
+                        Path path = Configuration.cacheDir.resolve(key + "_xmi.xml");
+                        logger.fine("Writing XMI in: "+ path);
+                        TransformationUtils.printDocument(entry.getValue().get(), path);
+                    } catch (TransformerException e) {
+                        e.printStackTrace();
+                    }
                 }
-                */
                 validationListener.enqueueForValidation(entry.getKey(), entry.getValue().get());
 
             } catch (InterruptedException | ExecutionException e){
@@ -178,6 +182,7 @@ public class TransformationService extends BasicService implements Transformatio
 
 
     protected Document singleTransformation(Map.Entry<Profile,List<Profile>> entry){
+        boolean validateIGM = true;
         Profile key = entry.getKey();
         try {
             Document resulting_xmi ;
@@ -223,6 +228,7 @@ public class TransformationService extends BasicService implements Transformatio
                     merged_TP = TPs.get(0);
                 } else { // size >1
                     // CGM
+                    validateIGM = false;
                     merged_EQ = createMergeProfile(EQs, "EQ", TransformationUtils.getBusinessProcess(key.xml_name));
                     merged_SSH = createMergeProfile(SSHs, "SSH", TransformationUtils.getBusinessProcess(key.xml_name));
                     merged_TP = createMergeProfile(TPs, "TP", TransformationUtils.getBusinessProcess(key.xml_name));
@@ -231,7 +237,12 @@ public class TransformationService extends BasicService implements Transformatio
                 CheckXMLConsistency xmlConsistency = new CheckXMLConsistency(merged_EQ, merged_TP, merged_SSH, key, sv_sn.get(0)); //CGM consistency
                 if (!xmlConsistency.isExcluded()) {
                     Document merged_xml = createMerge(key, EQBD, TPBD, TransformationUtils.getBusinessProcess(key.xml_name), key, merged_EQ, merged_SSH, merged_TP, XGMPreparationUtils.defaultBDIds);
-                    resulting_xmi = createXmi(key, merged_xml);
+
+                    //DEBUG: print merged XML to disk
+                    if (Configuration.debugMode)
+                        printDocument(merged_xml, Configuration.cacheDir.resolve(key + "_mergedXML.xml"));
+
+                    resulting_xmi = createXmi(key, merged_xml, validateIGM);
                     isNB.remove(key); //FIXME: not clean
                     isShortCircuit.remove(key); //FIXME: not clean
                     return resulting_xmi;
@@ -746,7 +757,7 @@ public class TransformationService extends BasicService implements Transformatio
      * @throws IOException
      * @throws TransformerException
      */
-    public Document createXmi(Profile key, Document target) throws URISyntaxException, ParserConfigurationException, SAXException, IOException, TransformerException {
+    public Document createXmi(Profile key, Document target, boolean valideIGM) throws URISyntaxException, ParserConfigurationException, SAXException, IOException {
         xmiXmlns = null;
         xmiXmlns = new HashMap<>();
         HashMap<String,String> sub = parseEcoreXmi();
@@ -786,7 +797,10 @@ public class TransformationService extends BasicService implements Transformatio
 
         }
 
-        xmi.getDocumentElement().setAttribute("type","igm");
+        if(valideIGM)
+            xmi.getDocumentElement().setAttribute("type","igm");
+        else
+            xmi.getDocumentElement().setAttribute("type","cgm");
         xmi.getDocumentElement().setAttribute("validationScope", "QOCDCV3_1");
         xmi.getDocumentElement().setAttribute("excludeProvedRules", "false");
         xmi.getDocumentElement().setAttribute("local_level_validation", "true");
@@ -1073,19 +1087,18 @@ public class TransformationService extends BasicService implements Transformatio
      * @param doc
      * @param modelPart_
      * @param business
-     * @throws IOException
-     * @throws TransformerException
      */
-    private void addFullModelInfo(Document doc, String modelPart_, String business) throws IOException, TransformerException {
+    private void addFullModelInfo(Document doc, String modelPart_, String business) {
 
         NodeList fullmodel = doc.getElementsByTagName("md:FullModel");
         String effectiveDate = "";
         String sourcingTSO_ = "";
         String fileVersion_ = "";
         for(int i=0; i<fullmodel.getLength();i++){
-            if(fullmodel.item(i).getLocalName()!=null){
-                if(fullmodel.item(i).hasChildNodes()){
-                    NodeList childs = fullmodel.item(i).getChildNodes();
+            Node fullModelNode = fullmodel.item(i);
+            if(fullModelNode.getLocalName()!=null){
+                if(fullModelNode.hasChildNodes()){
+                    NodeList childs = fullModelNode.getChildNodes();
                     for(int c=0;c<childs.getLength();c++){
                         if(childs.item(c).getLocalName()!=null){
                             String localName= childs.item(c).getLocalName();
@@ -1109,50 +1122,54 @@ public class TransformationService extends BasicService implements Transformatio
                             }
                         }
                     }
+
+                    Node region = doc.createElement("brlnd:Model.region");
+                    Node bp = doc.createElement("brlnd:Model.bp");
+                    Node tool = doc.createElement("brlnd:Model.tool");
+                    Node rsc = doc.createElement("brlnd:Model.rsc");
+                    Node effectiveDateTime = doc.createElement("brlnd:Model.effectiveDateTime");
+                    Node businessProcess = doc.createElement("brlnd:Model.businessProcess");
+                    Node sourcingTSO = doc.createElement("brlnd:Model.sourcingTSO");
+                    Node modelPart = doc.createElement("brlnd:Model.modelPart");
+                    Node fileVersion = doc.createElement("brlnd:Model.fileVersion");
+                    Node sourcingRSC = doc.createElement("brlnd:Model.sourcingRSC");
+
+                    fullModelNode.appendChild(region);
+                    fullModelNode.appendChild(bp);
+                    fullModelNode.appendChild(tool);
+                    fullModelNode.appendChild(rsc);
+
+                    effectiveDateTime.setTextContent(effectiveDate);
+                    fullModelNode.appendChild(effectiveDateTime);
+
+                    if(business!=null) businessProcess.setTextContent(business);
+                    fullModelNode.appendChild(businessProcess);
+
+                    if(sourcingTSO_!=null){
+                        sourcingTSO.setTextContent(sourcingTSO_);
+                        if(!modelPart_.contains("BD")){
+                            sourcingTSO.setTextContent(sourcingTSO_);
+                        }
+                        else{
+                            sourcingTSO.setTextContent("ENTSOE");
+                        }
+                    }
+                    fullModelNode.appendChild(sourcingTSO);
+
+                    if(modelPart_!=null) modelPart.setTextContent(modelPart_);
+                    fullModelNode.appendChild(modelPart);
+
+                    fileVersion.setTextContent(fileVersion_);
+                    fullModelNode.appendChild(fileVersion);
+
+                    fullModelNode.appendChild(sourcingRSC);
+
                 }
             }
+
         }
 
-        Node region = doc.createElement("brlnd:Model.region");
-        Node bp = doc.createElement("brlnd:Model.bp");
-        Node tool = doc.createElement("brlnd:Model.tool");
-        Node rsc = doc.createElement("brlnd:Model.rsc");
-        Node effectiveDateTime = doc.createElement("brlnd:Model.effectiveDateTime");
-        Node businessProcess = doc.createElement("brlnd:Model.businessProcess");
-        Node sourcingTSO = doc.createElement("brlnd:Model.sourcingTSO");
-        Node modelPart = doc.createElement("brlnd:Model.modelPart");
-        Node fileVersion = doc.createElement("brlnd:Model.fileVersion");
-        Node sourcingRSC = doc.createElement("brlnd:Model.sourcingRSC");
 
-        fullmodel.item(0).appendChild(region);
-        fullmodel.item(0).appendChild(bp);
-        fullmodel.item(0).appendChild(tool);
-        fullmodel.item(0).appendChild(rsc);
-
-        effectiveDateTime.setTextContent(effectiveDate);
-        fullmodel.item(0).appendChild(effectiveDateTime);
-
-        if(business!=null) businessProcess.setTextContent(business);
-        fullmodel.item(0).appendChild(businessProcess);
-
-        if(sourcingTSO_!=null){
-            sourcingTSO.setTextContent(sourcingTSO_);
-            if(!modelPart_.contains("BD")){
-                sourcingTSO.setTextContent(sourcingTSO_);
-            }
-            else{
-                sourcingTSO.setTextContent("ENTSOE");
-            }
-        }
-        fullmodel.item(0).appendChild(sourcingTSO);
-
-        if(modelPart_!=null) modelPart.setTextContent(modelPart_);
-        fullmodel.item(0).appendChild(modelPart);
-
-        fileVersion.setTextContent(fileVersion_);
-        fullmodel.item(0).appendChild(fileVersion);
-
-        fullmodel.item(0).appendChild(sourcingRSC);
 
     }
 
@@ -1283,7 +1300,7 @@ public class TransformationService extends BasicService implements Transformatio
      * @throws IOException
      * @throws TransformerException
      */
-    private HashMap<String,Node> addObject(Document doc, NodeList nodeList, String s, boolean begin) throws IOException, TransformerException {
+    private HashMap<String,Node> addObject(Document doc, NodeList nodeList, String s, boolean begin) {
         NodeList nodes = nodeList.item(0).getOwnerDocument().getElementsByTagName(s);
         HashMap<String,Node> addedNodes = new HashMap<>();
         for(int i=0; i<nodes.getLength();i++){
@@ -1313,7 +1330,7 @@ public class TransformationService extends BasicService implements Transformatio
      * @throws IOException
      * @throws TransformerException
      */
-    private HashMap<String,Node> addObject(Document doc, Node nodeToInsert, boolean begin) throws IOException, TransformerException {
+    private HashMap<String,Node> addObject(Document doc, Node nodeToInsert, boolean begin) {
         HashMap<String,Node> addedNodes = new HashMap<>();
         if(nodeToInsert.getLocalName()!=null){
             Node node;

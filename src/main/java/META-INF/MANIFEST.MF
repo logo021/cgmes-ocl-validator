@@ -30,5 +30,5 @@ Class-Path: org.eclipse.ocl.xtext.base_1.9.0.v20190910-0937.jar org.ec
  cl.pivot_1.9.0.v20190910-0937.jar commons-io-2.6.jar org.apache.log4j
  _1.2.15.v201012070815.jar org.eclipse.ocl.xtext.completeocl_1.9.0.v20
  190910-0937.jar org.eclipse.ocl.ecore_3.14.0.v20190910-0937.jar
-Main-Class: ocl.OCLEvaluator
+Main-Class: cgmbp.Validator
 

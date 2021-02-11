@@ -15,12 +15,18 @@
                 <include>LICENSE*</include>
                 <include>NOTICE*</include>
                 <include>config/*</include>
+                <include>xmi/*</include>
+                <include>reports/*/*</include>
+                <include>*.docx</include>
             </includes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/scripts</directory>
             <outputDirectory>/</outputDirectory>
             <fileMode>0755</fileMode>
+            <includes>
+                <include>validate.py</include>
+            </includes>
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}</directory>
@@ -28,13 +34,6 @@
             <includes>
                 <include>*.jar</include>
             </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/scripts</directory>
-            <outputDirectory>/inputs</outputDirectory>
-            <excludes>
-                <exclude>*</exclude>        <!-- tweak to create empty dir -->
-            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.build.directory}/site</directory>

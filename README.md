@@ -1,11 +1,35 @@
-# CGMES OCL rules V3 Validator Prototype
+# EMF/OCL Validator Java Wrapper version 1.0
 
-This project is a framework to automatize the validation of CGMES files using OCL rules. It uses the Eclipse EMF framework.
+This project is a framework to automate the validation of xmi files. 
+It uses the Eclipse Modeling Framework (EMF) and the Object Constraint Language (OCL).
 
 ## Purpose
 
-The goal of this tool is to provide some feedback to TSOs and RSCs about the quality
-of data they generate or use.
+The Java Wrapper is intended to validate CIMXML files assembled into models
+called Individual Grid Models (IGMs) or Common Grid Models (CGMs) within ENTSO-E.
+
+The goal of this tool is to provide information about the quality of the CIMXML files
+and the IGMs/CGMs.
+The specifications that describe the CIMXML files are
+- IEC TS 61970-600 (CGMES 2.4.15).
+- IEC 61970-552
+
+To perform the validation the CIMXML files and IGMs/CGMs need to be converted to xmi files.
+The original Java Wrapper did this conversion but it has been removed from this version.
+Reason is that there are two solutions for the conversion, the one in the original 
+Java Wrapper and an XSLT solution that was used as the template for creating the 
+Java Wrapper conversion. Maintaining the two solutions turned out to be difficult so the original
+XSLT solution was kept and the Java Wrapper conversion was removed. Hence this version of the
+Java Wrapper do not include the CIMXML to xmi conversion and use xmi files as input.
+
+With the CIMXML to xmi conversion removed from the Java Wrapper it has become almost generic 
+only described by an ecore file (the information model) and ocl rules in the ecore file.
+
+But the Java Wrapper still contains non generic parts and they are
+ - the xmi file name contains meta data that is used
+ - the result report, the QAR, is specific to an XML schema used by ENTSO-E
+ - a description of the OCL rules, also a CIMXML document.
+
 
 ## Compilation and packaging
 
@@ -13,104 +37,65 @@ of data they generate or use.
 
 - Java 64 bits >= 1.8. It can be downloaded from https://www.java.com/fr/download/.
 - Maven >= 3.5. it can be downloaded from https://maven.apache.org/download.cgi
+- Python is needed to run the startup scripts and can be downloaded from https://www.python.org/downloads/
 
-Be sure that Java and maven are properly configured.
+Make sure that Python is included in the Windows path, there is a install checkbox for this
 
 For Maven, if you are behind a proxy, be sure to set the configuration properly or use a maven repository managed by your organization.
 
 ### Compilation
 
-Run the command `mvn clean package` to generate the jar file of the validation library. The generated jar is stored in the `target` folder: `target/ocl_validator-*.jar`
+Run the command `mvn clean package` to generate the jar file of the validation library. The generated jar 
+is saved in the `target` folder.
+
+As an alternative the files may be loaded in an Eclipse project where compilation and packaging is done.
 
 
 ### Distributable library with dependencies
 
-Run the command `mvn clean install` to create a redistributable package containing the validator library with required dependencies and scripts to easily launch the validator. The fully packaged validator is stored in the `target` folder:
-`target/ocl_validator-3.0-bin.tar.gz` or `target/ocl_validator-3.0-bin.zip`
+Run the command `mvn clean install` to create a redistributable package containing the validator library 
+with required dependencies and scripts to easily launch the validator. 
+The archived validator is stored in the `target` folder.
 
-## How to run the validator
+## Runtime
 
 ### Requirements
 
 This tool requires Java >= 1.8.
 It can be downloaded from https://www.java.com/fr/download/.
 
-The tool has been tested under Windows and Linux.
+Python is needed to run the launch script.
 
-### Use the installation package
+The tool has been tested under Windows only.
+
+## Use the installation package
+
 Unzip the installation package wherever you want.
 The installation package contains has the following structure:
 
------ config/
+- config/		the input configuration files
+- reports/		the resulting reports. The Svedala test network reports are included as reference
+- scripts/		The Python script to run the Java Wrapper
+- target/		the executable Java Wrapper jar file.
+- xmi/			igms/cgms converted to xmi, input to the validation. The Svedala xmi file is present as reference
 
------ inputs/
+## Validate
+### Prepare for validation
 
------ ocl_validator/
+- copy the following latest files to the `config` directory; information model (cgmes61970oclModel.ecore), rule descriptions (UMLRestrictionRules.xml) and QAR XML schema (QAR_v4.1_CGMBP_23032020.xsd)
+- remove the `temp` directory
+- empty the `reports` directory from any not wanted reports
+- The meta data files can be aquired from ENTSO-E, please contact CGMBP working group or digital section
 
------ validate.bat
+### How to validate
 
------ validate.sh
+Run the script `validate.py` to start the validation of the xmi files
 
------ startValidationDeamon.bat
+### Get the results
 
------ startValidationDeamon.sh
-
-## Configuration
-
-- copy the input IGMS to be validated into the directory `inputs`. The format has to 
-be the following: each xml profile instance file has to be in a separate zip file 
-- copy in the directory `config` a CGMES boundary set (same format: each 
-instance as a separate zip). This boundary set will be substituted to the one defined
-in the IGM if this is not the same. This process is similar to what OPDE does.
-- **important**: required validation rules are specified in a separare configuration files, it has to be stored into the `config` directory.
-These configuration files can be obtained from ENTSOe CGM BP group:
-
-https://entsoe.sharefile.com/home/shared/foc0a777-e28e-45a2-a775-a517e1f8580a 
-
-
-
-## Usage
-
-### Stand-alone mode
-
-####  Windows users
-Run the following script
-`validate.bat
-`
-#### Linux users
-Run the following script
-`validate.sh
-`
-During the execution, logs will be displayed on the screen.
-The output of CGMES file analysis is stored in an **Excel sheet** under the directory `reports`. This xls file contains one sheet per IGM. 
-
-For each IGM are reported: 
-- the name of the violated rule, 
-- the object class it applies to and 
-- the rdf:id (and when possible the name) of the object instances it refers to.
-
-### Daemon mode
-
-We provide another mode of generation of reports, which aims at dealing with flows of data rather than static content of a directory
-
-####  Windows users
-Run the following script
-`startValidationDaemon.bat
-`
-#### Linux users
-Run the following script
-`startValidationDaemon.sh
-`
-
-The program is going to monitor the `inputs` directory.
-
-Each time there is a new profile instance, it will analyse it, wait for new inputs until there is a full IGM, then for this IGM the several steps of validation are triggered and two reports are created - the XLS one as for the stand-alone mode, and an XML report, similar to the one that the ENTSO-E quality portal displays. It is possible to activate/deactivate one or the other of the report types in the configuration file `config/config.properties`.
-
-The program works as a daemon (service), which means it stops only when the script is interrupted.
-
-Remark. This solution can for example be plugged on the file system interface of OPDE to automatically check incoming data.
-
-
+The results are picked up in the `reports` directory, there are two sub directories
+- `ModelExcelReports` the model validation result on MS Excel format
+- `ModelQAReports` the model validation result according to the XML schema
 
 ## Disclaimer
 
@@ -118,7 +103,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 ## Copyright
 &copy; RTE 2019-2020
-Contributors: Marco Chiaramello, Jérôme Picault, Maria Hergueta Ortega, Thibaut Vermeulen, Lars-Ola Gottfried Österlund
+Contributors: Marco Chiaramello, Jérôme Picault, Maria Hergueta Ortega, Thibaut Vermeulen, 
+&copy; ENTSO-E 2020 Lars-Ola Gottfried Österlund
 
 ## License
 Mozilla Public License 2.0

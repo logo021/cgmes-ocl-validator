@@ -1,47 +1,56 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
-               THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
-               EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-               OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
-               SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-               INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
-               TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
-               BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-               CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-               ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
-               DAMAGE.
-               (c) RTE 2019
-               Authors: Marco Chiaramello, Jerome Picault
--->
+<!-- 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGE.
+ENTSO-E 2020 Authors: Lars-Ola Österlund
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+Change history
+Date		By	Description
+2020-12-28 	LOO This header added
+2020-12-28 	LOO The build changed so class path and reference to main class added
+2021-02-10  LOO Java wrapper code extracted
+ -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
 
-    <groupId>ocl_validator</groupId>
-    <artifactId>ocl_validator</artifactId>
-    <version>3.0</version>
+  <groupId>cgmbp</groupId>
+  <artifactId>EmfValidatorJavaWrapper</artifactId>
+  <version>1.0</version>
+
     <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.2</version>
-                <configuration>
-                    <source>8</source>
-                    <target>8</target>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.2</version>
+				<configuration>
+         			<source>8</source>
+         			<target>8</target>
+				</configuration>
+			</plugin>
+			<plugin>
+			  <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
                     <descriptors>
                         <descriptor>src/assembly/jar.xml</descriptor>
                         <descriptor>src/assembly/distrib.xml</descriptor>
                     </descriptors>
                     <appendAssemblyId>true</appendAssemblyId>
+                    <archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<mainClass>cgmbp.Validator</mainClass>
+						</manifest>
+					</archive>
                 </configuration>
                 <executions>
                     <execution>
@@ -70,18 +79,14 @@
                     <sources>
                         <source>config/QAR_v4.1_CGMBP_23032020.xsd</source>
                     </sources>
-                    <!-- The package of your generated sources -->
-                    <packageName>ocl.service.reporting.xml</packageName>
+                    <packageName>cgmbp.reporting.xml</packageName>
                 </configuration>
             </plugin>
-
-        </plugins>
-    </build>
-
-
+		</plugins>
+	</build>
     <dependencies>
-
-        <!-- for compatibility with Java 11 -->
+    	
+    	<!-- for compatibility with Java 11 -->
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
@@ -105,87 +110,37 @@
             <artifactId>activation</artifactId>
             <version>1.1.1</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.emf</groupId>
-            <artifactId>org.eclipse.emf.ecore</artifactId>
-            <version>2.22.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.7</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.poi</groupId>
-            <artifactId>poi-ooxml</artifactId>
-            <version>4.1.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.11</version>
-        </dependency>
-
-
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.8.6</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>27.1-jre</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <version>4.2.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
-            <version>1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>2.13.3</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr-runtime</artifactId>
-            <version>3.2</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.emf</groupId>
-            <artifactId>org.eclipse.emf.common</artifactId>
-            <version>2.19.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.emf</groupId>
-            <artifactId>org.eclipse.emf.ecore.xmi</artifactId>
-            <version>2.16.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.emf</groupId>
-            <artifactId>org.eclipse.emf.edit</artifactId>
-            <version>2.16.0</version>
-        </dependency>
-
-        <dependency>
+        
+    	<dependency>
+    		<groupId>org.eclipse.emf</groupId>
+    		<artifactId>org.eclipse.emf.ecore</artifactId>
+    		<version>2.18.0</version>
+    	</dependency>
+    	<dependency>
+    		<groupId>org.eclipse.emf</groupId>
+    		<artifactId>org.eclipse.emf.ecore.xmi</artifactId>
+    		<version>2.16.0</version>
+    	</dependency>
+    	<dependency>
+    		<groupId>org.powermock</groupId>
+    		<artifactId>
+    			powermock-release-junit-without-mock-framework
+    		</artifactId>
+    		<version>1.6.2</version>
+    		<type>pom</type>
+    	</dependency>
+    	<dependency>
+    		<groupId>org.eclipse.core</groupId>
+    		<artifactId>org.eclipse.core.expressions</artifactId>
+    		<version>3.4.300</version>
+    	</dependency>
+    	<dependency>
+    		<groupId>org.eclipse.xtext</groupId>
+    		<artifactId>org.eclipse.xtext</artifactId>
+    		<version>2.20.0</version>
+    	</dependency>
+    	
+    	<dependency>
             <groupId>org.eclipse.emf.validation.service</groupId>
             <artifactId>service</artifactId>
             <version>1.8.0</version>
@@ -258,6 +213,14 @@
         </dependency>
 
         <dependency>
+            <groupId>org.eclipse.xpand</groupId>
+            <artifactId>xpand</artifactId>
+            <version>2.2.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/plugins/org.eclipse.xpand_2.2.0.v201605260315.jar</systemPath>
+        </dependency>
+        
+         <dependency>
             <groupId>org.eclipse.platform</groupId>
             <artifactId>org.eclipse.osgi</artifactId>
             <version>3.15.300</version>
@@ -270,25 +233,17 @@
         </dependency>
 
         <dependency>
-            <groupId>org.eclipse.xpand</groupId>
-            <artifactId>xpand</artifactId>
-            <version>2.2.0</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/plugins/org.eclipse.xpand_2.2.0.v201605260315.jar</systemPath>
-        </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.xtext</groupId>
-            <artifactId>org.eclipse.xtext</artifactId>
-            <version>2.22.0</version>
-        </dependency>
-
-        <dependency>
             <groupId>org.eclipse.ocl.xtext.base</groupId>
             <artifactId>xtext_base</artifactId>
             <version>1.9.0</version>
             <scope>system</scope>
             <systemPath>${project.basedir}/plugins/org.eclipse.ocl.xtext.base_1.9.0.v20190910-0937.jar</systemPath>
+        </dependency>
+        
+       <dependency>
+            <groupId>org.eclipse.xtext</groupId>
+            <artifactId>org.eclipse.xtext</artifactId>
+            <version>2.22.0</version>
         </dependency>
 
         <dependency>
@@ -315,6 +270,30 @@
             <version>2.6.0</version>
         </dependency>
 
+        <dependency>
+        	<groupId>org.eclipse.emf</groupId>
+        	<artifactId>org.eclipse.emf.edit</artifactId>
+        	<version>2.16.0</version>
+        </dependency>
+        <dependency>
+        	<groupId>com.google.code.gson</groupId>
+        	<artifactId>gson</artifactId>
+        	<version>2.8.6</version>
+        </dependency>
+        <dependency>
+        	<groupId>org.apache.poi</groupId>
+        	<artifactId>poi-ooxml</artifactId>
+        	<version>4.1.2</version>
+        </dependency>
+        <dependency>
+        	<groupId>org.apache.poi</groupId>
+        	<artifactId>poi-ooxml-schemas</artifactId>
+        	<version>4.1.2</version>
+        </dependency>
+        <dependency>
+        	<groupId>org.apache.poi</groupId>
+        	<artifactId>poi</artifactId>
+        	<version>4.1.2</version>
+        </dependency>
     </dependencies>
-
 </project>
